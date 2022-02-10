@@ -1,11 +1,8 @@
 import * as React from 'react'
 
-
-export const initialAuthContextState = {
+export const initialGlobalContextState = {
     username: 'no username',
     tokens: 'no jwt',
 }
 
-
-
-export const AuthContext = React.createContext({ctx: <any>{}, setCtx: (val: any)=>{}})
+export const GlobalContext = React.createContext({ctx: <any>{}, setCtx: (val: any)=>{}})
