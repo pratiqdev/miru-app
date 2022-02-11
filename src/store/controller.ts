@@ -4,14 +4,20 @@ import Log from '../lib/logger';
 
 export const defaultState = {
   appInitialized: false,
-  pixelArray: [],
-  windowX: 480,
-  windowY: 720,
-  cursorType: 'round',
-  cursorSize: 12,
-  cursorColor: '#00F',
-  cursorX: 0,
-  cursorY: 0,
+  timeline: [],
+  window: {
+    height: 480,
+    width: 720,
+    depth: 0,
+  },
+  cursor: {
+    color: '#00f',
+    type: 'round',
+    height: 2,
+    width: 8,
+    x: 0,
+    y: 0,
+  },
 };
 
 export const types = {
