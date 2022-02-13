@@ -9,16 +9,18 @@ import Scrawl from './pages/Scrawl'
 
 const App = (props:any) => {
 
-  React.useEffect(()=>{
-    props.appInit()
-  },[])
+  // React.useEffect(()=>{
+  //   props.appInit()
+  // },[])
 
 
   return (
       <div className="App">
         <header className="App-header">
           <Routes>
+            <Route path='/' element={<p>Scrawler</p>} />
             <Route path='scrawl' element={<Scrawl />} />
+            <Route path='*' element={<p>No Page at this Route</p>} />
 
           </Routes>
           {/* <Canvas /> */}
@@ -28,4 +30,4 @@ const App = (props:any) => {
   )
 }
 
-export default connector(App)
+export default App

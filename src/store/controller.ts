@@ -26,7 +26,8 @@ export const defaultState = {
     y: 0,
   },
   redrawRequired: false,
-  renderActive: false,
+  scrollDepth: 0,
+  br: '----------------------------------',
   renderEngine: null,
 };
 
@@ -49,6 +50,8 @@ export enum Actions {
   'render_init',
   'render_stop',
   'render_start',
+  'render_scroll',
+  'set_mods_enabled',
 }
 
 
@@ -77,7 +80,7 @@ let log = new Log({
 
 const initializeApp = (state: any) => {
   log.main({
-    head: 'runInit',
+    head: 'initializeApp',
     details: 'Initialize the controller state',
     loc: '/src/store/controller.ts | 133'
   })
@@ -149,6 +152,7 @@ const handleCursorType = (type: any, dispatch: any) => {
 }
 
 const setCursorActive = (state:any, isActive: boolean) => {
+  state.renderEngine.setCursorActive(isActive)
     return {
       ...state,
       cursor: {
@@ -186,20 +190,27 @@ const renderInit = (state: any, payload: any) => {
 
 const renderStart = (state:any) => {
   state.renderEngine.start()
-  return {
-    ...state,
-    renderActive: true
-  }
+  return state
 }
 
 const renderStop = (state:any) => {
   state.renderEngine.stop()
+  return state
+}
+
+const renderScroll = (state:any, payload:any) => {
+  let scrollDepth = payload.deltaY > 0 ? state.scrollDepth + 1 : state.scrollDepth - 1;
+  state.renderEngine.scroll(scrollDepth)
   return {
     ...state,
-    renderActive: false,
+    scrollDepth
   }
 }
 
+const setModsEnabled = (state: any, payload: any) => {
+  state.renderEngine.setModsEnabled(payload)
+  return state
+}
 
 
 
@@ -247,6 +258,9 @@ export const globalReducer: any = (state = defaultState, action: any) => {
 
     case Actions.render_stop: return renderStop(state)
 
+    case Actions.render_scroll: return renderScroll(state, action.payload)
+
+    case Actions.set_mods_enabled: return setModsEnabled(state, action.payload)
 
       
 

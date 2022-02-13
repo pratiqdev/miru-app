@@ -46,8 +46,9 @@ body{
 }
 
 #canvas-container{
-  position: relative;
+  position: absolute;
   display: flex;
+  justify-content: space-between;
   width: 100vw;
   height: 100vh;
   top:0;
@@ -55,18 +56,19 @@ body{
 }
 
 #canvas {
-  position: absolute;
-  top: 0;
-  left: calc(50vw - 360px);
+  /* position: absolute; */
+  /* top: 0; */
+  /* left: calc(50vw - 360px); */
   background: #fff;
   /* width: 720px; */
   /* height: 900px; */
+  cursor: none;
 }
 
 #sidebar-right{
-  position: absolute;
-  top: 0;
-  right: 0;
+  /* position: absolute; */
+  /* top: 0; */
+  /* right: 0; */
   height: 100vw;
   background: #222;
   color: white;
