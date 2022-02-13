@@ -11,7 +11,9 @@ const Scrawl = (props: any) => {
     React.useEffect(()=>{
         if(canvasRef.current){ 
             canvasRef.current.addEventListener('mousemove', props.handleMouseMove) 
-            props.initRender(canvasRef.current.getContext('2d'))
+            canvasRef.current.width = 720
+            canvasRef.current.height = window.innerHeight
+            props.rendererInit(canvasRef.current)
         }
         // if(window){ window.addEventListener('mouseup', removeDrags) }
         return () => {canvasRef.current.removeEventListener('mousemove', props.handleMouseMove)}
@@ -36,8 +38,11 @@ const Scrawl = (props: any) => {
         if(lockAspectRatio){
             if(
                 val / aspectRatio > props.settings.maxCursorSize
-                || val / aspectRatio <  0    
-            ){ return false }
+                || val / aspectRatio <  1    
+            ){
+                console.log('blocked width') 
+                return false 
+            }
 
             props.handleCursorSize(
                 val,    
@@ -55,8 +60,11 @@ const Scrawl = (props: any) => {
         if(lockAspectRatio){
             if(
                 val * aspectRatio > props.settings.maxCursorSize
-                || val * aspectRatio <  0    
-            ){ return false }
+                || val * aspectRatio <  1    
+            ){
+                console.log('blocked height') 
+                return false 
+            }
             props.handleCursorSize(
                 Math.round(val * aspectRatio),
                 val    
@@ -74,8 +82,8 @@ const Scrawl = (props: any) => {
             <div id='canvas-container'>
                 <div id='sidebar-right'>
 
-                    <button onClick={props.startRender}>start render</button>
-                    <button onClick={props.stopRender}>stop render</button>
+                    <button onClick={props.renderStart}>start render</button>
+                    <button onClick={props.renderStop}>stop render</button>
                     <button onClick={handleAspectRatio}>{lockAspectRatio ? 'Unlock' : 'Lock'} aspect ratio</button>
                     
                    
@@ -99,7 +107,7 @@ const Scrawl = (props: any) => {
 
                     <pre style={{border: '1px solid grey', fontSize: '.8rem', textAlign: 'left'}}>{JSON.stringify(props, null, 2)}</pre>
                 </div>
-                <canvas ref={canvasRef} onMouseMove={props.handleMouseMove} onMouseEnter={props.activateCursor} onMouseLeave={props.deactivateCursor} id='canvas'></canvas>
+                <canvas width='720' height='900' ref={canvasRef} onMouseMove={props.handleMouseMove} onMouseEnter={props.activateCursor} onMouseLeave={props.deactivateCursor} id='canvas'></canvas>
             </div>
         </>
     )

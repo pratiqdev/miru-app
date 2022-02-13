@@ -20,13 +20,14 @@ export const defaultState = {
     enabled: true,
     color: '#00f',
     type: 'round',
-    height: 2,
     width: 8,
+    height: 2,
     x: 0,
     y: 0,
   },
   redrawRequired: false,
-  renderer: null,
+  renderActive: false,
+  renderEngine: null,
 };
 
 
@@ -45,9 +46,9 @@ export enum Actions {
   'cursor_activate',
   'cursor_deactivate',
   'validate_settings',
-  'init_render',
-  'start_render',
-  'stop_render',
+  'render_init',
+  'render_stop',
+  'render_start',
 }
 
 
@@ -58,61 +59,83 @@ let log = new Log({
 
 
 
-// + //////////////////////////////////////////////////////////// T H U N K
-// + //////////////////////////////////////////////////////////////////////
 
-/**
- * = runInit()
- * 
- * called once on app mount
- * iinitializes application state
- * 
- * @param dispatch - dispatch event
- */
-export const runInit = (dispatch: any) => {
+
+
+
+
+
+
+//- ////////////////////////////////////////////////////////////////////// D I R E C T
+//- //////////////////////////////////////////////////////////////////////////////////
+//-   Any function that can directly return the new state object 
+//-   without a delay or any async actions
+
+
+
+
+
+const initializeApp = (state: any) => {
   log.main({
     head: 'runInit',
     details: 'Initialize the controller state',
     loc: '/src/store/controller.ts | 133'
   })
 
-
-  dispatch({ type: Actions.app_initialized })
+  return{
+    ...state,
+    appInitialized: true
+  }
 }
 
+//-------------------------------------------------------------------- MOUSE / CURSOR
 
+const handleMouseMove = (state: any, payload: any) => {
+  var rect = payload.target.getBoundingClientRect();
+  let x = Math.round(payload.clientX - rect.left)
+  let y = Math.round(payload.clientY - rect.top)
+  state.renderEngine.setCursorPos({x, y})
 
+  return {
+    ...state,
+    cursor: {
+      ...state.cursor,
+      x,
+      y,
+    }
+  }
+}
 
+const handleCursorSize = (state:any, payload: any) => {
+  let w = parseInt(payload.w)
+  let h = parseInt(payload.h)
+  let Ws;
+  let Hs;
 
-// + CURSOR ---------------------------------------------------------------
+  if(w < 1){ Ws = 1 }
+  else if(w > state.settings.maxCursorSize){ Ws = state.settings.maxCursorSize }
+  else{ Ws = w }
 
-/**
- * = handleMouseMove()
- * 
- * called once on app mount
- * iinitializes application state
- * 
- * @param e - mousemove event
- */
- export const handleMouseMove = (e: any, dispatch: any) => {
-  var rect = e.target.getBoundingClientRect();
-  dispatch({ 
-    type: Actions.mouse_move, 
-    payload: {
-      x: Math.round(e.clientX - rect.left), 
-      y: Math.round(e.clientY - rect.top)
-    } 
+  if(h < 1){ Hs = 1 }
+  else if(h > state.settings.maxCursorSize){ Hs = state.settings.maxCursorSize }
+  else{ Hs = h }
+
+  state.renderEngine.setCursorSize({
+    width: Ws,
+    height: Hs
   })
+
+  return {
+    ...state,
+    cursor: {
+      ...state.cursor,
+      width: Ws,
+      height: Hs
+    }
+  }
 }
 
-export const handleCursorSize = (w: any, h: any, dispatch: any) => {
-  dispatch({ 
-    type: Actions.cursor_size, 
-    payload: {w, h} 
-  })
-}
-
-export const handleCursorType = (type: any, dispatch: any) => {
+const handleCursorType = (type: any, dispatch: any) => {
   let newType;
   switch(type.toLowerCase()){
     case 'square':    newType = CursorTypes.square; break;
@@ -125,10 +148,71 @@ export const handleCursorType = (type: any, dispatch: any) => {
   })
 }
 
+const setCursorActive = (state:any, isActive: boolean) => {
+    return {
+      ...state,
+      cursor: {
+        ...state.cursor,
+        active: isActive,
+      }
+    }
+}
+
+
+//-------------------------------------------------------------------------- RENDERER 
+
+const renderInit = (state: any, payload: any) => {
+  let engine = new Renderer(payload.getContext('2d'))
+
+  engine.setCanvasDimensions({
+    width: payload.clientWidth,
+    height: payload.clientHeight
+  })
+
+  engine.setCursorPos({
+    x: 0,
+    y: 0,
+  })
+  engine.setCursorSize({
+    width: state.cursor.width,
+    height: state.cursor.height
+  })
+
+  return {
+    ...state,
+    renderEngine: engine
+  }
+}
+
+const renderStart = (state:any) => {
+  state.renderEngine.start()
+  return {
+    ...state,
+    renderActive: true
+  }
+}
+
+const renderStop = (state:any) => {
+  state.renderEngine.stop()
+  return {
+    ...state,
+    renderActive: false,
+  }
+}
 
 
 
-// + CANVAS ---------------------------------------------------------------
+
+
+
+
+//? //////////////////////////////////////////////////////////////////////// T H U N K
+//? //////////////////////////////////////////////////////////////////////////////////
+//?   Any functions that require a delay in the state update must be
+//?   called directly then dispatch an event that will update the state
+//?   e.g. fetch timeline from db
+
+export const someAsyncFunction = (state:any, payload:any) => {}
 
 
 
@@ -137,97 +221,31 @@ export const handleCursorType = (type: any, dispatch: any) => {
 
 
 
-// + ///////////////////////////////////////////////////////  R E D U C E R
-// + //////////////////////////////////////////////////////////////////////
+
+//+ ///////////////////////////////////////////////////////////////////  R E D U C E R
+//+ ///////////////////////////////////////////////////////////////////////////////////
+//+   Any functions that directly affect the state without complex 
+//+   computations should call dispatch directly and logic handled 
+//+   within the reducer
 
 export const globalReducer: any = (state = defaultState, action: any) => {
   switch (action.type) {
 
-    //=======================================================================  INIT
+    case Actions.app_initialized: return initializeApp(state)
 
-    case Actions.app_initialized:{
-      
-      return {
-        ...state,
-        appInitialized: true,
-      };
-    }
+    case Actions.mouse_move: return handleMouseMove(state, action.payload) 
+     
+    case Actions.cursor_size: return handleCursorSize(state, action.payload)
 
+    case Actions.cursor_activate: return setCursorActive(state, true)
 
+    case Actions.cursor_deactivate: return setCursorActive(state, false)
 
+    case Actions.render_init: return renderInit(state, action.payload)
 
+    case Actions.render_start: return renderStart(state)
 
-    //=======================================================================  MOUSE MOVE
-
-    case Actions.mouse_move: {
-      return {
-        ...state,
-        cursor: {
-          ...state.cursor,
-          x: action.payload.x,
-          y: action.payload.y
-        }
-      }
-    }
-      
-
-    case Actions.cursor_size: {
-      let w = action.payload.w
-      let h = action.payload.h
-      let Ws;
-      let Hs;
-
-      if(w < 1){ Ws = 1 }
-      else if(w > state.settings.maxCursorSize){ Ws = state.settings.maxCursorSize }
-      else{ Ws = parseInt(w) }
-
-      if(h < 1){ Hs = 1 }
-      else if(h > state.settings.maxCursorSize){ Hs = state.settings.maxCursorSize }
-      else{ Hs = parseInt(h) }
-
-      return {
-        ...state,
-        cursor: {
-          ...state.cursor,
-          width: Ws,
-          height: Hs
-        }
-      }
-    }
-
-    case Actions.cursor_activate:
-    return{
-      ...state,
-      cursor:{
-        ...state.cursor,
-        active: true,
-      }
-    }
-
-    case Actions.cursor_deactivate:
-    return{
-      ...state,
-      cursor:{
-        ...state.cursor,
-        active: false,
-      }
-    }
-
-    case Actions.init_render:
-    return{
-      ...state,
-      renderer: new Renderer(action.payload)
-    }
-
-    case Actions.start_render:{
-    state.renderer && state.renderer.startRender()
-    return state
-    }
-
-    case Actions.stop_render:{
-      state.renderer && state.renderer.stopRender()
-      return state
-      }
+    case Actions.render_stop: return renderStop(state)
 
 
       

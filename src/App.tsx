@@ -10,7 +10,7 @@ import Scrawl from './pages/Scrawl'
 const App = (props:any) => {
 
   React.useEffect(()=>{
-    props.runInit()
+    props.appInit()
   },[])
 
 
